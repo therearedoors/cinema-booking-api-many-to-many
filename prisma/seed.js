@@ -2,11 +2,12 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function seed() {
-    await createCustomer();
+    const customer = await createCustomer();
     const movies = await createMovies();
     const screens = await createScreens();
-    await createScreenings(screens, movies);
-
+    const screenings = await createScreenings(screens, movies);
+    await createSeat()
+    //const tickets = await createTickets(customer,screenings)
     process.exit(0);
 }
 
@@ -51,7 +52,7 @@ async function createMovies() {
 
 async function createScreens() {
     const rawScreens = [
-        { number: 1 }, { number: 2 }
+        { number: 1}, { number: 2}
     ];
 
     const screens = [];
@@ -71,7 +72,7 @@ async function createScreens() {
 
 async function createScreenings(screens, movies) {
     const screeningDate = new Date();
-
+    const screenings = []
     for (const screen of screens) {
         for (let i = 0; i < movies.length; i++) {
             screeningDate.setDate(screeningDate.getDate() + i);
@@ -91,10 +92,77 @@ async function createScreenings(screens, movies) {
                     }
                 }
             });
-
+            screenings.push(screening)
             console.log('Screening created', screening);
         }
     }
+    return screenings
+}
+
+const createSeat = async() => {
+    const seat1 = await prisma.seat.create({
+        data: {
+            seatCode: 'A1',
+            screen: {
+                connect: {
+                    id: 1
+                }
+            },
+            tickets: {
+                create: [{
+                    screening: {
+                        connect: {
+                            id: 1
+                        }
+                    },
+                    customer: {
+                        connect: {
+                            id: 1
+                        }
+                    },
+                    },
+                    {
+                        screening: {
+                            connect: {
+                                id: 2
+                            }
+                        },
+                        customer: {
+                            connect: {
+                                id: 1
+                            }
+                        },
+                        }
+                    ]
+                }
+            }
+        })
+
+        const seat2 = await prisma.seat.create({
+        data: {
+            seatCode: 'A2',
+            screen: {
+                connect: {
+                    id: 1
+                    }
+                },
+            tickets: {
+                create: {
+                    screening: {
+                        connect: {
+                            id: 2
+                        }
+                    },
+                    customer: {
+                        connect: {
+                            id: 1
+                        }
+                    }
+                }
+                    }
+                }
+            })
+            console.log(seat1,seat2)
 }
 
 seed()
